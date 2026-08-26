@@ -59,10 +59,10 @@ if not st.session_state.empezar:
 else:
     st.markdown('<p class="main-title" style="font-size: 2.2rem;">U-Formes: Generador de Informes</p>', unsafe_allow_html=True)
 
-    # Conexión con Gemini
+    # Conexión con Gemini usando el modelo exacto
     API_KEY = os.environ.get("GEMINI_API_KEY")
     genai.configure(api_key=API_KEY)
-   model = genai.GenerativeModel('gemini-3.6-flash')
+    model = genai.GenerativeModel('gemini-3.6-flash')
 
     # --- SUBIDA DE GUÍA O FORMATO OFICIAL (PRIMERO) ---
     st.markdown("### 📄 1. Sube tu Guía o Formato Oficial")
