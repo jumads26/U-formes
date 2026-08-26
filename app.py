@@ -22,7 +22,6 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&display=swap');
 
-    /* Animación de escritura para el logo */
     @keyframes typing {
         from { width: 0 }
         to { width: 100% }
@@ -44,7 +43,7 @@ st.markdown("""
         font-family: 'Playfair Display', serif;
         font-style: italic;
         font-weight: bold;
-        font-size: 5rem; /* ¡Mucho más grande! */
+        font-size: 5rem;
         background: linear-gradient(45deg, #FF4B2B, #FF416C, #1B365D, #00C9FF);
         background-size: 300% 300%;
         -webkit-background-clip: text;
@@ -53,7 +52,7 @@ st.markdown("""
         white-space: nowrap;
         overflow: hidden;
         border-right: 4px solid #1B365D;
-        width: 10ch; /* Ajustado al largo de U-Formes */
+        width: 10ch;
         text-align: center;
     }
 
@@ -80,7 +79,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Control de estado para la pantalla de bienvenida
 if 'empezar' not in st.session_state:
     st.session_state.empezar = False
 
@@ -97,12 +95,10 @@ else:
     st.markdown('<div style="text-align: center;"><span style="font-family: \'Playfair Display\', serif; font-style: italic; font-size: 2.8rem; background: linear-gradient(45deg, #1B365D, #00C9FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold;">U-Formes</span></div>', unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #666; margin-bottom: 30px;'>Generador Oficial de Informes Académicos</p>", unsafe_allow_html=True)
 
-    # Conexión con Gemini usando el modelo fijo
     API_KEY = os.environ.get("GEMINI_API_KEY")
     genai.configure(api_key=API_KEY)
     model = genai.GenerativeModel('gemini-3.6-flash')
 
-    # --- SUBIDA DE GUÍA O FORMATO OFICIAL (PRIMERO) ---
     st.markdown("### 📄 1. Sube tu Guía o Formato Oficial")
     st.info("Sube el archivo de la práctica (PDF, Word o TXT). La IA extraerá automáticamente la estructura y los requerimientos.")
     archivo_guia = st.file_uploader("Sube tu archivo de guía", type=["txt", "pdf", "docx"])
@@ -122,7 +118,6 @@ else:
                 contenido_guia += para.text + "\n"
         st.success("¡Guía leída con éxito! Los datos base han sido extraídos.")
 
-    # --- DATOS BÁSICOS DEL ESTUDIANTE ---
     st.markdown("### 📋 2. Datos del Estudiante y la Práctica")
     col1, col2 = st.columns(2)
     with col1:
@@ -147,12 +142,10 @@ else:
 
     tema = st.text_area("Tema del Taller o Práctica", placeholder="Ej: Evaluación de la respuesta glucémica...", value="Evaluación de la respuesta glucémica postprandial mediante la ingesta de carbohidratos.")
 
-    # --- SECCIÓN DE FOTOS / ANEXOS OPCIONALES ---
     st.markdown("### 🖼️ 3. Evidencia Fotográfica (Opcional)")
     st.info("Si no subes imágenes, el apartado de anexos se generará vacío de forma limpia.")
     fotos_anexos = st.file_uploader("Sube imágenes para los anexos", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
 
-    # --- GENERADOR DE INFORME ---
     if st.button("Generar Informe Oficial en PDF"):
         if not tema and not contenido_guia:
             st.warning("Por favor, ingresa al menos el tema o sube una guía de práctica.")
@@ -177,12 +170,10 @@ else:
                     respuesta = model.generate_content(prompt_maestro)
                     informe_texto = respuesta.text
                     
-                    # Limpieza radical de caracteres de escape de IA
                     informe_texto = re.sub(r'[\$\{\}\\]', '', informe_texto)
                     
                     st.success("¡Informe generado con éxito!")
 
-                    # --- CREACIÓN DEL PDF ---
                     pdf = FPDF(unit='cm')
                     pdf.add_page()
                     pdf.set_margins(left=2.0, top=2.0, right=2.0)
@@ -190,7 +181,6 @@ else:
                     
                     pdf.set_font("Times", size=11)
 
-                    # Encabezado Oficial UPS limpio
                     pdf.set_font("Times", style='B', size=11)
                     pdf.cell(17, 0.8, txt="UNIVERSIDAD POLITÉCNICA SALESIANA", border=1, ln=1, align='C')
                     pdf.set_font("Times", size=10)
@@ -210,7 +200,6 @@ else:
                     pdf.cell(17, 0.7, txt=f"TEMA DEL TALLER O PRÁCTICA: {tema.upper()}", border=1, ln=1, align='C')
                     pdf.ln(0.5)
 
-                    # Procesamiento y pintado de párrafos y tablas limpias
                     parrafos = informe_texto.split('\n')
                     for p in parrafos:
                         p = p.strip()
@@ -228,7 +217,6 @@ else:
                             pdf.ln(0.3)
                             pdf.multi_cell(17, 0.6, txt=texto_final, align='L')
                             pdf.ln(0.1)
-                            # Tabla Azul de Materiales
                             pdf.set_fill_color(41, 128, 185)
                             pdf.set_text_color(255, 255, 255)
                             pdf.set_font("Times", style='B', size=10)
@@ -244,7 +232,6 @@ else:
                             pdf.ln(0.3)
                             pdf.multi_cell(17, 0.6, txt=texto_final, align='L')
                             pdf.ln(0.1)
-                            # Tabla Verde de Riesgos
                             pdf.set_fill_color(39, 174, 96)
                             pdf.set_text_color(255, 255, 255)
                             pdf.set_font("Times", style='B', size=10)
@@ -263,7 +250,6 @@ else:
                         else:
                             pdf.multi_cell(17, 0.6, txt="     " + texto_final, align='J')
 
-                    # --- SECCIÓN DE ANEXOS / FOTOS ---
                     pdf.ln(0.5)
                     pdf.set_font("Times", style='B', size=11)
                     pdf.multi_cell(17, 0.6, txt="EVIDENCIA FOTOGRÁFICA DE LA PRÁCTICA", align='L')
@@ -285,7 +271,6 @@ else:
                         pdf.ln(0.2)
                         pdf.cell(17, 0.8, txt="[ Espacio reservado para anexos fotográficos - Sin imágenes adjuntadas ]", border=1, ln=1, align='C')
 
-                    # Firmas finales oficiales
                     pdf.ln(1.0)
                     pdf.set_font("Times", style='B', size=10)
                     pdf.cell(8.5, 0.6, txt="NOMBRES Y APELLIDOS DEL ESTUDIANTE", border=1, align='C')
@@ -299,9 +284,6 @@ else:
                         pdf.output(tmp_file.name)
                         
                     with open(tmp_file.name, "rb") as pdf_file:
-                        st.download_button("📥 Descargar Informe UPS Definitivo", data=pdf_file, file_name="Informe_UPS_Final_Animado.pdf", mime="application/pdf")
-                except Exception as e:
-                    st.error(f"Ocurrió un error al generar el PDF: {e}")
                         st.download_button("📥 Descargar Informe UPS Definitivo", data=pdf_file, file_name="Informe_UPS_Final.pdf", mime="application/pdf")
                 except Exception as e:
                     st.error(f"Ocurrió un error al generar el PDF: {e}")
