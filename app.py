@@ -10,7 +10,7 @@ st.title("🎓 U-formes (Motor: Gemini)")
 # Conexión segura
 API_KEY = os.environ.get("GEMINI_API_KEY")
 genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
 # --- FORMULARIO DE PORTADA ---
 st.markdown("### Datos del Informe")
