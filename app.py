@@ -3,6 +3,7 @@ import google.generativeai as genai
 from fpdf import FPDF
 import tempfile
 import os
+from datetime import datetime # <--- NUEVO: Importamos la librería de fechas
 
 st.set_page_config(page_title="U-formes", page_icon="🎓")
 st.title("🎓 U-formes (Motor: Gemini)")
@@ -10,7 +11,7 @@ st.title("🎓 U-formes (Motor: Gemini)")
 # Conexión segura
 API_KEY = os.environ.get("GEMINI_API_KEY")
 genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash-latest')
+model = genai.GenerativeModel('gemini-2.0-flash') # Usamos el modelo actual y estable
 
 # --- FORMULARIO DE PORTADA ---
 st.markdown("### Datos del Informe")
@@ -24,7 +25,11 @@ with col1:
     docente = st.text_input("Nombre del Docente")
 with col2:
     materia = st.text_input("Materia")
-    fecha = st.text_input("Fecha")
+    
+    # --- FECHA AUTOMÁTICA EN FORMATO DIA/MES/AÑO ---
+    fecha_actual_default = datetime.now().strftime("%d/%m/%Y")
+    fecha = st.text_input("Fecha (Día/Mes/Año)", value=fecha_actual_default)
+    
     num_informe = st.text_input("Número de Informe")
 
 tema = st.text_area("¿De qué trata este informe?", placeholder="Ej: Práctica de laboratorio sobre...")
@@ -37,7 +42,6 @@ formato_personalizado = ""
 secciones_seleccionadas = []
 
 if opcion_formato == "Seleccionar secciones":
-    # ¡LISTA DE OPCIONES AMPLIADA!
     opciones = [
         "Título", "Objetivo General", "Objetivos Específicos", 
         "Introducción", "Justificación", "Marco Teórico", 
@@ -68,7 +72,6 @@ if st.button("Generar Informe (Gratis)"):
                 else:
                     instruccion_est = f"Sigue ESTRICTAMENTE este formato:\n{formato_personalizado}"
 
-                # PROMPT MAESTRO ANTI-DETECTORES IA
                 prompt_maestro = f"""
                 Actúa como un estudiante universitario ecuatoriano redactando un informe de {materia}.
                 Tema: "{tema}".
@@ -91,7 +94,7 @@ if st.button("Generar Informe (Gratis)"):
                 pdf.add_page()
                 pdf.set_font("Times", size=12)
 
-                # Portada
+                # Portada con fecha en formato DD/MM/YYYY
                 encabezado = f"Universidad: {universidad}\nNombre: {nombre}\nCurso/Semestre: {curso_semestre}\nNivel: {nivel}\nDocente: {docente}\nMateria: {materia}\nFecha: {fecha}\nInforme No.: {num_informe}\n\n"
                 pdf.multi_cell(0, 10, txt=encabezado.encode('latin-1', 'replace').decode('latin-1'), align='L')
 
@@ -105,13 +108,11 @@ if st.button("Generar Informe (Gratis)"):
                     texto_limpio = p.replace("**", "").replace("#", "").strip()
                     texto_final = texto_limpio.encode('latin-1', 'replace').decode('latin-1')
 
-                    # Detectar si es título para aplicar negrita
                     if p.startswith("**") or p.startswith("#"):
                         pdf.set_font("Times", style='B', size=12)
                         pdf.multi_cell(0, 10, txt=texto_final, align='L')
-                        pdf.set_font("Times", style='', size=12) # Volver a normal
+                        pdf.set_font("Times", style='', size=12)
                     else:
-                        # Sangría de 5 espacios y justificado (J) con interlineado 2.0 (altura 10)
                         pdf.multi_cell(0, 10, txt="     " + texto_final, align='J')
                 
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
