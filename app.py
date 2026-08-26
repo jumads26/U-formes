@@ -303,3 +303,6 @@ else:
                         st.download_button("📥 Descargar Informe UPS Definitivo", data=pdf_file, file_name="Informe_UPS_Perfecto.pdf", mime="application/pdf")
                 except Exception as e:
                     st.error(f"Ocurrió un error al generar el PDF: {e}")
+                        st.download_button("📥 Descargar Informe UPS Definitivo", data=pdf_file, file_name="Informe_UPS_Perfecto.pdf", mime="application/pdf")
+                except Exception as e:
+                    st.error(f"Ocurrió un error al generar el PDF: {e}")
