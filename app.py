@@ -15,7 +15,7 @@ try:
 except ImportError:
     pypdf = None
 
-# --- CONFIGURACIÓN DE LA PÁGINA Y ESTILO CORPORATIVO (AZUL MARINO Y DORADO) ---
+# --- CONFIGURACIÓN DE LA PÁGINA Y ESTILO CORPORATIVO ---
 st.set_page_config(page_title="U-Formes DOCX", page_icon="🎓", layout="centered")
 
 st.markdown("""
@@ -142,6 +142,7 @@ else:
     col1, col2 = st.columns(2)
     with col1:
         nombre_estudiante = st.text_input("Nombre del Estudiante", value="")
+        carrera = st.text_input("Carrera", value="")
         laboratorio = st.text_input("Laboratorio / Escenario", value="")
         asignatura = st.text_input("Asignatura", value="")
     with col2:
@@ -170,7 +171,7 @@ else:
         if not tema and not contenido_guia:
             st.warning("Por favor, ingresa al menos el tema o sube una guía de práctica.")
         else:
-            with st.spinner("Redactando informe profesional y generando archivo Word editable..."):
+            with st.spinner("Redactando informe profesional con tablas matriciales y generando archivo Word editable..."):
                 try:
                     if opcion_formato == "Seleccionar secciones específicas":
                         instruccion_est = f"Incluye estrictamente estas secciones: {', '.join(secciones_seleccionadas)}."
@@ -179,15 +180,16 @@ else:
 
                     prompt_maestro = f"""
                     Actúa como un estudiante universitario de excelencia de la Universidad Politécnica Salesiana (UPS).
-                    Redacta un informe técnico formal para la asignatura de {asignatura if asignatura else 'la materia'}, sobre el tema: "{tema}".
+                    Redacta un informe técnico formal para la carrera de {carrera if carrera else 'la carrera'}, asignatura de {asignatura if asignatura else 'la materia'}, sobre el tema: "{tema}".
                     
                     {instruccion_est}
                     
                     INSTRUCCIONES DE FORMATO INNEGOCIABLES Y ESTRICTAS:
-                    1. PROHIBIDO poner introducciones duplicadas. Ve directo al grano.
-                    2. CERO paréntesis aclaratorios o sobreexplicaciones entre paréntesis dentro del texto. Todo concepto debe integrarse y explicarse directamente en el párrafo.
-                    3. No utilices guiones seguidos ni líneas divisorias extrañas hechas con símbolos dentro del texto.
-                    4. Tono estrictamente académico, formal, humano y sin muletillas robóticas.
+                    1. PROHIBIDO poner introducciones duplicadas ni bloques de presentación ficticios generados por IA al inicio. Ve directo al contenido de la primera sección.
+                    2. CERO paréntesis aclaratorios o sobreexplicaciones entre paréntesis dentro del texto. Todo concepto debe integrarse y explicarse directamente dentro de la fluidez natural del párrafo.
+                    3. No utilices guiones seguidos ni líneas divisorias hechas con símbolos dentro del texto.
+                    4. Para listas o numerales, redacta de forma corrida o en párrafos limpios, evitando estructurar listas robóticas excesivas.
+                    5. Tono estrictamente académico, formal, humano y sin muletillas robóticas.
                     """
                     
                     respuesta = model.generate_content(prompt_maestro)
@@ -198,20 +200,22 @@ else:
 
                     doc = Document()
 
+                    # Márgenes exactos de 2.5 cm a cada lado y arriba/abajo
                     for section in doc.sections:
-                        section.top_margin = Inches(0.79)
-                        section.bottom_margin = Inches(0.79)
-                        section.left_margin = Inches(0.79)
-                        section.right_margin = Inches(0.79)
+                        section.top_margin = Inches(0.98) # Aprox 2.5 cm
+                        section.bottom_margin = Inches(0.98)
+                        section.left_margin = Inches(0.98)
+                        section.right_margin = Inches(0.98)
 
                     style = doc.styles['Normal']
                     font = style.font
                     font.name = 'Times New Roman'
                     font.size = Pt(11)
                     font.color.rgb = RGBColor(0, 0, 0)
-                    style.paragraph_format.line_spacing = 2.0
+                    style.paragraph_format.line_spacing = 2.0  # Interlineado de 2.0 obligatorio
                     style.paragraph_format.space_after = Pt(6)
 
+                    # --- TABLA DE ENCABEZADO UPS LIMPIA ---
                     tabla_encabezado = doc.add_table(rows=6, cols=2)
                     tabla_encabezado.alignment = WD_TABLE_ALIGNMENT.CENTER
                     
@@ -224,10 +228,10 @@ else:
                     run_uni.font.size = Pt(11)
 
                     datos_tabla = [
-                        (f"Nombre del Estudiante: {nombre_estudiante}", f"Nivel/Grupo: {nivel_grupo}"),
-                        (f"Laboratorio/Escenario: {laboratorio}", f"Docente: {docente}"),
-                        (f"Asignatura: {asignatura}", f"Periodo Académico: {periodo}"),
-                        (f"Fecha: {fecha_formateada}", f"Práctica No.: {num_informe}")
+                        (f"Nombre del Estudiante: {nombre_estudiante}", f"Carrera: {carrera}"),
+                        (f"Laboratorio/Escenario: {laboratorio}", f"Nivel/Grupo: {nivel_grupo}"),
+                        (f"Asignatura: {asignatura}", f"Docente: {docente}"),
+                        (f"Periodo Académico: {periodo}", f"Fecha: {fecha_formateada}   |   Práctica No.: {num_informe}")
                     ]
 
                     for r_idx, (col_izq, col_der) in enumerate(datos_tabla, start=1):
@@ -258,17 +262,18 @@ else:
                         if "TEMA DEL TALLER" in texto_limpio.upper() or "UNIVERSIDAD POLITÉCNICA SALESIANA" in texto_limpio.upper():
                             continue
 
+                        # Tabla Matricial de Materiales (Doble Entrada Real en Word)
                         if "MATERIALES" in texto_limpio.upper() and len(texto_limpio) < 40:
                             h = doc.add_paragraph()
                             run_h = h.add_run(texto_limpio)
                             run_h.bold = True
                             run_h.font.size = Pt(12)
                             
-                            t_mat = doc.add_table(rows=2, cols=2)
+                            t_mat = doc.add_table(rows=3, cols=2)
                             t_mat.alignment = WD_TABLE_ALIGNMENT.CENTER
                             hdr_cells = t_mat.rows[0].cells
-                            hdr_cells[0].paragraphs[0].add_run("MATERIALES / EQUIPOS").bold = True
-                            hdr_cells[1].paragraphs[0].add_run("USO ESPECÍFICO").bold = True
+                            hdr_cells[0].paragraphs[0].add_run("MATERIALES / EQUIPOS / REACTIVOS").bold = True
+                            hdr_cells[1].paragraphs[0].add_run("USO ESPECÍFICO EN LA PRÁCTICA").bold = True
                             
                             for cell in hdr_cells:
                                 shading = parse_xml(r'<w:shd {} w:fill="1B365D"/>'.format(nsdecls('w')))
@@ -277,22 +282,28 @@ else:
                                     for run in paragraph.runs:
                                         run.font.color.rgb = RGBColor(255, 255, 255)
 
-                            row_cells = t_mat.rows[1].cells
-                            row_cells[0].paragraphs[0].add_run("Instrumental de laboratorio y reactivos")
-                            row_cells[1].paragraphs[0].add_run("Desarrollo analítico y experimental")
+                            filas_mat = [
+                                ("Instrumental analítico calibrado", "Medición cuantitativa de parámetros principales"),
+                                ("Reactivos y muestras de ensayo", "Sustratos evaluados durante la experimentación")
+                            ]
+                            for f_idx, (m_col, u_col) in enumerate(filas_mat, start=1):
+                                r_cells = t_mat.rows[f_idx].cells
+                                r_cells[0].paragraphs[0].add_run(m_col)
+                                r_cells[1].paragraphs[0].add_run(u_col)
                             doc.add_paragraph()
 
+                        # Tabla Matricial de Riesgos (Doble Entrada Real en Word)
                         elif "RIESGOS" in texto_limpio.upper() and len(texto_limpio) < 40:
                             h = doc.add_paragraph()
                             run_h = h.add_run(texto_limpio)
                             run_h.bold = True
                             run_h.font.size = Pt(12)
                             
-                            t_riesgo = doc.add_table(rows=2, cols=2)
+                            t_riesgo = doc.add_table(rows=3, cols=2)
                             t_riesgo.alignment = WD_TABLE_ALIGNMENT.CENTER
                             hdr_cells = t_riesgo.rows[0].cells
-                            hdr_cells[0].paragraphs[0].add_run("FACTOR DE RIESGO").bold = True
-                            hdr_cells[1].paragraphs[0].add_run("EQUIPO DE PROTECCIÓN (EPP)").bold = True
+                            hdr_cells[0].paragraphs[0].add_run("FACTOR DE RIESGO IDENTIFICADO").bold = True
+                            hdr_cells[1].paragraphs[0].add_run("EQUIPO DE PROTECCIÓN (EPP) ASOCIADO").bold = True
                             
                             for cell in hdr_cells:
                                 shading = parse_xml(r'<w:shd {} w:fill="27AE60"/>'.format(nsdecls('w')))
@@ -301,9 +312,14 @@ else:
                                     for run in paragraph.runs:
                                         run.font.color.rgb = RGBColor(255, 255, 255)
 
-                            row_cells = t_riesgo.rows[1].cells
-                            row_cells[0].paragraphs[0].add_run("Biológico / Químico / Físico")
-                            row_cells[1].paragraphs[0].add_run("Mandil, Guantes, Gafas de seguridad")
+                            filas_riesgo = [
+                                ("Riesgo Biológico / Químico", "Mandil de manga larga, guantes de nitrilo, gafas"),
+                                ("Riesgo Físico / Mecánico", "Manipulación cuidadosa de material cortopunzante")
+                            ]
+                            for f_idx, (f_col, e_col) in enumerate(filas_riesgo, start=1):
+                                r_cells = t_riesgo.rows[f_idx].cells
+                                r_cells[0].paragraphs[0].add_run(f_col)
+                                r_cells[1].paragraphs[0].add_run(e_col)
                             doc.add_paragraph()
 
                         elif p.startswith("*") or p.startswith("#") or len(texto_limpio) < 50 and any(k in texto_limpio.upper() for k in ["DESCRIPCIÓN", "FUNDAMENTACIÓN", "ACTIVIDADES", "CONCLUSIONES", "RECOMENDACIONES", "BIBLIOGRAFÍA", "ANEXOS", "OBJETIVO", "INTRODUCCIÓN", "JUSTIFICACIÓN", "MARCO", "METODOLOGÍA", "RESULTADOS", "DISCUSIÓN"]):
@@ -314,7 +330,6 @@ else:
                         
                         else:
                             p_normal = doc.add_paragraph()
-                            p_normal.paragraph_format.left_indent = Inches(0.5)
                             p_normal.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
                             p_normal.add_run(texto_limpio)
 
@@ -352,7 +367,7 @@ else:
                         st.download_button(
                             "📥 Descargar Informe en Word (.docx)", 
                             data=docx_file, 
-                            file_name="Informe_UPS_Editable.docx", 
+                            file_name="Informe_UPS_Matricial.docx", 
                             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                         )
                 except Exception as e:
