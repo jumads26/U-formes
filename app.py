@@ -15,7 +15,7 @@ try:
 except ImportError:
     pypdf = None
 
-# --- CONFIGURACIÓN DE LA PÁGINA Y ESTILO CORPORATIVO ---
+# --- CONFIGURACIÓN DE PÁGINA Y ESTILO CON TU PALETA DE COLORES EXACTA ---
 st.set_page_config(page_title="U-Formes DOCX", page_icon="🎓", layout="centered")
 
 st.markdown("""
@@ -23,37 +23,39 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&display=swap');
 
     @keyframes typing {
-        from { width: 0 }
-        to { width: 100% }
+        from { width: 0; }
+        to { width: 100%; }
     }
 
     @keyframes blink {
-        50% { border-color: transparent }
+        50% { border-color: transparent; }
     }
 
     .logo-container {
         display: flex;
         justify-content: center;
         align-items: center;
-        margin-top: 20px;
+        margin-top: 30px;
         margin-bottom: 20px;
     }
 
+    /* Animación de trazo elegante y tamaño grande en cursiva con la paleta de colores (#023047, #219ebc, #ffb703, #fb8500) */
     .typing-logo {
         font-family: 'Playfair Display', serif;
         font-style: italic;
         font-weight: bold;
-        font-size: 50px; 
-        background: linear-gradient(45deg, #1B365D, #2C3E50, #D4AF37, #F39C12);
+        font-size: 55px;
+        background: linear-gradient(45deg, #023047, #219ebc, #ffb703, #fb8500);
         background-size: 300% 300%;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        animation: gradientShift 5s ease infinite, typing 3s steps(30, end), blink 0.75s step-end infinite;
+        animation: gradientShift 4s ease infinite, typing 3s steps(30, end), blink 0.75s step-end infinite;
         white-space: nowrap;
         overflow: hidden;
-        border-right: 4px solid #D4AF37;
+        border-right: 4px solid #ffb703;
         width: 10ch;
         text-align: center;
+        text-shadow: 0px 0px 20px rgba(33, 158, 188, 0.4);
     }
 
     @keyframes gradientShift {
@@ -63,20 +65,20 @@ st.markdown("""
     }
 
     .stButton>button {
-        background-color: #1B365D;
-        color: #F39C12;
+        background-color: #023047;
+        color: #ffb703;
         font-size: 20px;
         border-radius: 10px;
         padding: 12px 28px;
         width: 100%;
         font-weight: bold;
-        border: 2px solid #D4AF37;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+        border: 2px solid #219ebc;
+        box-shadow: 0px 4px 15px rgba(33, 158, 188, 0.3);
     }
     .stButton>button:hover {
-        background-color: #2C3E50;
-        color: #FFFFFF;
-        border-color: #F39C12;
+        background-color: #219ebc;
+        color: #ffffff;
+        border-color: #fb8500;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -86,7 +88,7 @@ if 'empezar' not in st.session_state:
 
 if not st.session_state.empezar:
     st.markdown('<div class="logo-container"><div class="typing-logo">U-Formes</div></div>', unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #555; font-size: 1.2rem; font-weight: 500;'>Tu asistente académico inteligente para informes de laboratorio en Word (.docx) editables.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #023047; font-size: 1.3rem; font-weight: 600;'>Tu asistente académico inteligente para informes de laboratorio profesionales en Word.</p>", unsafe_allow_html=True)
     st.write("")
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -94,8 +96,8 @@ if not st.session_state.empezar:
             st.session_state.empezar = True
             st.rerun()
 else:
-    st.markdown('<div style="text-align: center;"><span style="font-family: \'Playfair Display\', serif; font-style: italic; font-size: 40px; background: linear-gradient(45deg, #1B365D, #D4AF37); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold;">U-Formes</span></div>', unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #D4AF37; font-weight: bold; margin-bottom: 25px;'>Generador Oficial de Informes Académicos - UPS (.DOCX)</p>", unsafe_allow_html=True)
+    st.markdown('<div style="text-align: center;"><span style="font-family: \'Playfair Display\', serif; font-style: italic; font-size: 45px; background: linear-gradient(45deg, #023047, #fb8500); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold;">U-Formes</span></div>', unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #219ebc; font-weight: bold; margin-bottom: 25px;'>Generador Oficial de Informes Académicos - UPS (.DOCX)</p>", unsafe_allow_html=True)
 
     API_KEY = os.environ.get("GEMINI_API_KEY")
     genai.configure(api_key=API_KEY)
@@ -105,6 +107,7 @@ else:
     opcion_formato = st.radio("Elige cómo estructurar tu documento:", ["Seleccionar secciones específicas", "Subir mi guía o formato oficial"])
 
     contenido_guia = ""
+    tablas_extraidas_guia = []
     secciones_seleccionadas = []
 
     if opcion_formato == "Seleccionar secciones específicas":
@@ -122,21 +125,25 @@ else:
             default=["Objetivo General", "Introducción", "Marco Teórico", "Materiales y Equipos", "Metodología", "Resultados", "Conclusiones", "Bibliografía"]
         )
     else:
-        st.info("Sube el archivo de práctica (PDF, Word o TXT). La IA extraerá la estructura base.")
-        archivo_guia = st.file_uploader("Sube tu archivo de guía", type=["txt", "pdf", "docx"])
+        st.info("Sube el archivo de práctica (Word .docx o TXT). La IA respetará y copiará tal cual las tablas originales de riesgos y rúbricas.")
+        archivo_guia = st.file_uploader("Sube tu archivo de guía", type=["txt", "docx"])
         if archivo_guia is not None:
             extension = archivo_guia.name.split(".")[-1].lower()
             if extension == "txt":
                 contenido_guia = archivo_guia.getvalue().decode("utf-8")
-            elif extension == "pdf" and pypdf:
-                reader = pypdf.PdfReader(archivo_guia)
-                for page in reader.pages:
-                    contenido_guia += page.extract_text() or ""
             elif extension == "docx":
                 doc_temp = Document(archivo_guia)
                 for para in doc_temp.paragraphs:
                     contenido_guia += para.text + "\n"
-            st.success("¡Guía leída con éxito!")
+                # Extraer tablas originales del documento subido para clonarlas en el resultado
+                for table in doc_temp.tables:
+                    filas_tabla = []
+                    for row in table.rows:
+                        celdas = [cell.text.strip() for cell in row.cells]
+                        filas_tabla.append(celdas)
+                    if filas_tabla:
+                        tablas_extraidas_guia.append(filas_tabla)
+            st.success("¡Guía y tablas originales leídas con éxito!")
 
     st.markdown("### 📋 2. Datos del Estudiante y la Práctica")
     col1, col2 = st.columns(2)
@@ -171,12 +178,12 @@ else:
         if not tema and not contenido_guia:
             st.warning("Por favor, ingresa al menos el tema o sube una guía de práctica.")
         else:
-            with st.spinner("Redactando informe profesional con tablas matriciales y generando archivo Word editable..."):
+            with st.spinner("Redactando informe con formato corporativo y clonando tablas originales..."):
                 try:
                     if opcion_formato == "Seleccionar secciones específicas":
                         instruccion_est = f"Incluye estrictamente estas secciones: {', '.join(secciones_seleccionadas)}."
                     else:
-                        instruccion_est = f"Sigue la estructura de esta guía:\n{contenido_guia}"
+                        instruccion_est = f"Sigue la estructura y pautas de esta guía:\n{contenido_guia}"
 
                     prompt_maestro = f"""
                     Actúa como un estudiante universitario de excelencia de la Universidad Politécnica Salesiana (UPS).
@@ -188,8 +195,9 @@ else:
                     1. PROHIBIDO poner introducciones duplicadas ni bloques de presentación ficticios generados por IA al inicio. Ve directo al contenido de la primera sección.
                     2. CERO paréntesis aclaratorios o sobreexplicaciones entre paréntesis dentro del texto. Todo concepto debe integrarse y explicarse directamente dentro de la fluidez natural del párrafo.
                     3. No utilices guiones seguidos ni líneas divisorias hechas con símbolos dentro del texto.
-                    4. Para listas o numerales, redacta de forma corrida o en párrafos limpios, evitando estructurar listas robóticas excesivas.
-                    5. Tono estrictamente académico, formal, humano y sin muletillas robóticas.
+                    4. Para listas o numerales, redáctalos con moderación en párrafos limpios, evitando listados robóticos excesivos.
+                    5. Cada título de sección principal debe escribirse respetando la ortografía tipo oración: la primera letra en mayúscula y el resto en minúsculas (Ejemplo: Descripción del taller, Fundamentación teórica).
+                    6. Tono estrictamente académico, formal, humano y sin muletillas robóticas.
                     """
                     
                     respuesta = model.generate_content(prompt_maestro)
@@ -200,9 +208,9 @@ else:
 
                     doc = Document()
 
-                    # Márgenes exactos de 2.5 cm a cada lado y arriba/abajo
+                    # Márgenes de 2.5 cm en todos los lados
                     for section in doc.sections:
-                        section.top_margin = Inches(0.98) # Aprox 2.5 cm
+                        section.top_margin = Inches(0.98)
                         section.bottom_margin = Inches(0.98)
                         section.left_margin = Inches(0.98)
                         section.right_margin = Inches(0.98)
@@ -215,7 +223,7 @@ else:
                     style.paragraph_format.line_spacing = 2.0  # Interlineado de 2.0 obligatorio
                     style.paragraph_format.space_after = Pt(6)
 
-                    # --- TABLA DE ENCABEZADO UPS LIMPIA ---
+                    # --- TABLA DE ENCABEZADO UPS CON PALETA DE COLORES (#023047) ---
                     tabla_encabezado = doc.add_table(rows=6, cols=2)
                     tabla_encabezado.alignment = WD_TABLE_ALIGNMENT.CENTER
                     
@@ -247,7 +255,7 @@ else:
 
                     for row in tabla_encabezado.rows:
                         for cell in row.cells:
-                            shading_elm = parse_xml(r'<w:shd {} w:fill="F2F2F2"/>'.format(nsdecls('w')))
+                            shading_elm = parse_xml(r'<w:shd {} w:fill="E8F1F5"/>'.format(nsdecls('w')))
                             cell._tc.get_or_add_tcPr().append(shading_elm)
 
                     doc.add_paragraph()
@@ -262,78 +270,41 @@ else:
                         if "TEMA DEL TALLER" in texto_limpio.upper() or "UNIVERSIDAD POLITÉCNICA SALESIANA" in texto_limpio.upper():
                             continue
 
-                        # Tabla Matricial de Materiales (Doble Entrada Real en Word)
-                        if "MATERIALES" in texto_limpio.upper() and len(texto_limpio) < 40:
+                        # Si el texto detecta sección de riesgos o rúbrica y tenemos tablas originales de la guía, las clonamos idénticas
+                        if any(k in texto_limpio.upper() for k in ["RIESGOS", "RÚBRICA"]) and tablas_extraidas_guia:
                             h = doc.add_paragraph()
                             run_h = h.add_run(texto_limpio)
                             run_h.bold = True
                             run_h.font.size = Pt(12)
                             
-                            t_mat = doc.add_table(rows=3, cols=2)
-                            t_mat.alignment = WD_TABLE_ALIGNMENT.CENTER
-                            hdr_cells = t_mat.rows[0].cells
-                            hdr_cells[0].paragraphs[0].add_run("MATERIALES / EQUIPOS / REACTIVOS").bold = True
-                            hdr_cells[1].paragraphs[0].add_run("USO ESPECÍFICO EN LA PRÁCTICA").bold = True
-                            
-                            for cell in hdr_cells:
-                                shading = parse_xml(r'<w:shd {} w:fill="1B365D"/>'.format(nsdecls('w')))
-                                cell._tc.get_or_add_tcPr().append(shading)
-                                for paragraph in cell.paragraphs:
-                                    for run in paragraph.runs:
-                                        run.font.color.rgb = RGBColor(255, 255, 255)
-
-                            filas_mat = [
-                                ("Instrumental analítico calibrado", "Medición cuantitativa de parámetros principales"),
-                                ("Reactivos y muestras de ensayo", "Sustratos evaluados durante la experimentación")
-                            ]
-                            for f_idx, (m_col, u_col) in enumerate(filas_mat, start=1):
-                                r_cells = t_mat.rows[f_idx].cells
-                                r_cells[0].paragraphs[0].add_run(m_col)
-                                r_cells[1].paragraphs[0].add_run(u_col)
+                            # Insertar las tablas reales extraídas de la guía original
+                            for tabla_original in tablas_extraidas_guia:
+                                if len(tabla_original) > 1:
+                                    t_clonada = doc.add_table(rows=len(tabla_original), cols=len(tabla_original[0]))
+                                    t_clonada.alignment = WD_TABLE_ALIGNMENT.CENTER
+                                    for r_idx, fila in enumerate(tabla_original):
+                                        for c_idx, valor in enumerate(fila):
+                                            cell = t_clonada.cell(r_idx, c_idx)
+                                            cell.paragraphs[0].add_run(valor)
+                                            if r_idx == 0:
+                                                shading = parse_xml(r'<w:shd {} w:fill="023047"/>'.format(nsdecls('w')))
+                                                cell._tc.get_or_add_tcPr().append(shading)
+                                                for paragraph in cell.paragraphs:
+                                                    for run in paragraph.runs:
+                                                        run.font.color.rgb = RGBColor(255, 255, 255)
+                                                        run.bold = True
                             doc.add_paragraph()
-
-                        # Tabla Matricial de Riesgos (Doble Entrada Real en Word)
-                        elif "RIESGOS" in texto_limpio.upper() and len(texto_limpio) < 40:
+                        elif p.startswith("*") or p.startswith("#") or len(texto_limpio) < 50 and any(k in texto_limpio.upper() for k in ["DESCRIPCIÓN", "FUNDAMENTACIÓN", "ACTIVIDADES", "CONCLUSIONES", "RECOMENDACIONES", "BIBLIOGRAFÍA", "ANEXOS", "OBJETIVO", "INTRODUCCIÓN", "JUSTIFICACIÓN", "MARCO", "METODOLOGÍA", "RESULTADOS", "DISCUSIÓN", "RIESGOS", "RÚBRICA"]):
                             h = doc.add_paragraph()
                             run_h = h.add_run(texto_limpio)
                             run_h.bold = True
                             run_h.font.size = Pt(12)
-                            
-                            t_riesgo = doc.add_table(rows=3, cols=2)
-                            t_riesgo.alignment = WD_TABLE_ALIGNMENT.CENTER
-                            hdr_cells = t_riesgo.rows[0].cells
-                            hdr_cells[0].paragraphs[0].add_run("FACTOR DE RIESGO IDENTIFICADO").bold = True
-                            hdr_cells[1].paragraphs[0].add_run("EQUIPO DE PROTECCIÓN (EPP) ASOCIADO").bold = True
-                            
-                            for cell in hdr_cells:
-                                shading = parse_xml(r'<w:shd {} w:fill="27AE60"/>'.format(nsdecls('w')))
-                                cell._tc.get_or_add_tcPr().append(shading)
-                                for paragraph in cell.paragraphs:
-                                    for run in paragraph.runs:
-                                        run.font.color.rgb = RGBColor(255, 255, 255)
-
-                            filas_riesgo = [
-                                ("Riesgo Biológico / Químico", "Mandil de manga larga, guantes de nitrilo, gafas"),
-                                ("Riesgo Físico / Mecánico", "Manipulación cuidadosa de material cortopunzante")
-                            ]
-                            for f_idx, (f_col, e_col) in enumerate(filas_riesgo, start=1):
-                                r_cells = t_riesgo.rows[f_idx].cells
-                                r_cells[0].paragraphs[0].add_run(f_col)
-                                r_cells[1].paragraphs[0].add_run(e_col)
-                            doc.add_paragraph()
-
-                        elif p.startswith("*") or p.startswith("#") or len(texto_limpio) < 50 and any(k in texto_limpio.upper() for k in ["DESCRIPCIÓN", "FUNDAMENTACIÓN", "ACTIVIDADES", "CONCLUSIONES", "RECOMENDACIONES", "BIBLIOGRAFÍA", "ANEXOS", "OBJETIVO", "INTRODUCCIÓN", "JUSTIFICACIÓN", "MARCO", "METODOLOGÍA", "RESULTADOS", "DISCUSIÓN"]):
-                            h = doc.add_paragraph()
-                            run_h = h.add_run(texto_limpio)
-                            run_h.bold = True
-                            run_h.font.size = Pt(12)
-                        
                         else:
                             p_normal = doc.add_paragraph()
                             p_normal.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
                             p_normal.add_run(texto_limpio)
 
-                    doc.add_heading("EVIDENCIA FOTOGRÁFICA DE LA PRÁCTICA", level=2)
+                    doc.add_heading("Evidencia fotográfica de la práctica", level=2)
                     if fotos_anexos:
                         for idx, foto in enumerate(fotos_anexos):
                             temp_img = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
@@ -367,7 +338,7 @@ else:
                         st.download_button(
                             "📥 Descargar Informe en Word (.docx)", 
                             data=docx_file, 
-                            file_name="Informe_UPS_Matricial.docx", 
+                            file_name="Informe_UPS_Corregido.docx", 
                             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                         )
                 except Exception as e:
